@@ -1,28 +1,17 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import { setupServer } from './server.js';
+import { initMongoConnection } from './db/initMongoConnection.js';
 
-dotenv.config();
-
-export async function initMongoConnection() {
-  const { MONGODB_USER, MONGODB_PASSWORD, MONGODB_URL, MONGODB_DB } = process.env;
-
-  console.log('MongoDB User:', MONGODB_USER);
-  console.log('MongoDB Password:', MONGODB_PASSWORD);
-  console.log('MongoDB URL:', MONGODB_URL);
-  console.log('MongoDB DB:', MONGODB_DB);
-
-  const uri = `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_URL}/${MONGODB_DB}?retryWrites=true&w=majority`;
-
-  console.log('MongoDB URI:', uri);  // Перевірте формат URI
-
+async function startApp() {
   try {
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('Mongo connection successfully established!');
+    // Initialize MongoDB connection
+    await initMongoConnection();
+
+    // Setup and start server
+    setupServer();
   } catch (error) {
-    console.error('Mongo connection error:', error);
+    console.error('Failed to start the app:', error);
     process.exit(1);
   }
 }
+
+startApp();
