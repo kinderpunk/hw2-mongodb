@@ -1,13 +1,45 @@
+import { addContact, getAllContacts, getContactById, updateContactById, deleteContactById } from '../services/contacts.js';  // Статичний імпорт
+import createError from 'http-errors';  // Імпорт http-errors для генерації помилок
+
 export const getContacts = async (req, res) => {
+  const { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc', type, isFavourite } = req.query;
+  const filter = {};
+
+  if (type) {
+    filter.contactType = type;
+  }
+
+  if (isFavourite !== undefined) {
+    filter.isFavourite = isFavourite === 'true';
+  }
+
+  const skip = (page - 1) * perPage;
+  const sortOrderValue = sortOrder === 'asc' ? 1 : -1;
+
   try {
-    const contacts = await getAllContacts();
+    const totalItems = await getAllContacts(filter); // Переконайтесь, що ця функція приймає фільтр
+    const contacts = await getAllContacts()
+      .sort({ [sortBy]: sortOrderValue })
+      .skip(skip)
+      .limit(Number(perPage));
+
+    const totalPages = Math.ceil(totalItems.length / perPage); // Врахування загальної кількості
+
     res.json({
       status: 200,
-      message: "Contacts retrieved successfully",
-      data: contacts,
+      message: "Successfully found contacts!",
+      data: {
+        contacts,
+        page: Number(page),
+        perPage: Number(perPage),
+        totalItems: totalItems.length,
+        totalPages,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < totalPages,
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error retrieving contacts' });
+    res.status(500).json({ message: 'Виникла помилка при отриманні контактів' });
   }
 };
 
@@ -16,16 +48,12 @@ export const getContact = async (req, res) => {
   try {
     const contact = await getContactById(contactId);
     if (contact) {
-      res.json({
-        status: 200,
-        message: "Contact retrieved successfully",
-        data: contact,
-      });
+      res.json(contact);
     } else {
-      res.status(404).json({ status: 404, message: 'Contact not found' });
+      res.status(404).json({ message: 'Контакт не знайдено' });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Error retrieving contact' });
+    res.status(500).json({ message: 'Виникла помилка при отриманні контакту' });
   }
 };
 
@@ -33,13 +61,9 @@ export const createContact = async (req, res) => {
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
   try {
     const newContact = await addContact({ name, phoneNumber, email, isFavourite, contactType });
-    res.status(201).json({
-      status: 201,
-      message: "Contact created successfully",
-      data: newContact,
-    });
+    res.status(201).json(newContact);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating contact' });
+    res.status(500).json({ message: 'Виникла помилка при створенні контакту' });
   }
 };
 
@@ -53,13 +77,17 @@ export const updateContact = async (req, res) => {
       res.json({
         status: 200,
         message: "Successfully patched a contact!",
-        data: updatedContact,
+        data: updatedContact
       });
     } else {
-      res.status(404).json({ status: 404, message: 'Contact not found' });
+      throw createError(404, "Contact not found");
     }
   } catch (error) {
-    res.status(500).json({ message: 'Error updating contact' });
+    if (error.status === 404) {
+      res.status(404).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: 'Error updating contact' });
+    }
   }
 };
 
@@ -69,11 +97,15 @@ export const deleteContact = async (req, res) => {
   try {
     const result = await deleteContactById(contactId);
     if (result.deletedCount > 0) {
-      res.status(204).send();  
+      res.status(204).send();  // Успішне видалення
     } else {
-      res.status(404).json({ status: 404, message: 'Contact not found' });
+      throw createError(404, "Contact not found");
     }
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting contact' });
+    if (error.status === 404) {
+      res.status(404).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: 'Error deleting contact' });
+    }
   }
 };
