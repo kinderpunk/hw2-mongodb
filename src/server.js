@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import pino from 'pino';
+import contactsRouter from './routers/contacts.js'; 
 import notFoundHandler from './middlewares/notFoundHandler.js';
 import errorHandler from './middlewares/errorHandler.js';
-import { getContacts, getContact } from './controllers/contactsController.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -16,8 +16,7 @@ export function setupServer() {
   app.use(express.json());
 
   // Routes
-  app.get('/contacts', getContacts);
-  app.get('/contacts/:contactId', getContact);
+  app.use('/api', contactsRouter); 
 
   // Handling undefined routes
   app.use(notFoundHandler);
