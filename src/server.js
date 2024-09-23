@@ -16,7 +16,7 @@ export function setupServer() {
   app.use(express.json());
 
   // Routes
-  app.use('/api', contactsRouter); 
+  app.use(contactsRouter); 
 
   // Handling undefined routes
   app.use(notFoundHandler);
