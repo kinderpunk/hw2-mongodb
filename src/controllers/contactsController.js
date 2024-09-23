@@ -1,3 +1,6 @@
+import { getAllContacts, getContactById, addContact, updateContactById, deleteContactById } from '../models/contact.js';
+
+// Отримання всіх контактів
 export const getContacts = async (req, res) => {
   try {
     const contacts = await getAllContacts();
@@ -7,10 +10,12 @@ export const getContacts = async (req, res) => {
       data: contacts,
     });
   } catch (error) {
+    console.error('Error details:', error);
     res.status(500).json({ message: 'Error retrieving contacts' });
   }
 };
 
+// Отримання контакту за ID
 export const getContact = async (req, res) => {
   const { contactId } = req.params;
   try {
@@ -29,6 +34,7 @@ export const getContact = async (req, res) => {
   }
 };
 
+// Створення нового контакту
 export const createContact = async (req, res) => {
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
   try {
@@ -43,6 +49,7 @@ export const createContact = async (req, res) => {
   }
 };
 
+// Оновлення контакту за ID
 export const updateContact = async (req, res) => {
   const { contactId } = req.params;
   const updates = req.body;
@@ -59,17 +66,19 @@ export const updateContact = async (req, res) => {
       res.status(404).json({ status: 404, message: 'Contact not found' });
     }
   } catch (error) {
+    console.error('Error details:', error);
     res.status(500).json({ message: 'Error updating contact' });
   }
 };
 
+// Видалення контакту за ID
 export const deleteContact = async (req, res) => {
   const { contactId } = req.params;
 
   try {
     const result = await deleteContactById(contactId);
     if (result.deletedCount > 0) {
-      res.status(204).send();  
+      res.status(204).send();
     } else {
       res.status(404).json({ status: 404, message: 'Contact not found' });
     }

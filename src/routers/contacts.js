@@ -7,6 +7,6 @@ router.get('/contacts', getContacts);
 router.get('/contacts/:contactId', getContact);
 router.post('/contacts', createContact);
 router.patch('/contacts/:contactId', updateContact);
-router.delete('/contacts/:contactId', deleteContact); 
+router.delete('/contacts/:contactId', deleteContact);
 
 export default router;
