@@ -11,18 +11,14 @@ const logger = pino();
 const app = express();
 
 export function setupServer() {
-  // Middleware
   app.use(cors());
   app.use(express.json());
 
-  // Routes
   app.use(contactsRouter); 
 
-  // Handling undefined routes
   app.use(notFoundHandler);
   app.use(errorHandler);
 
-  // Start the server
   const port = process.env.PORT || 3000;
   app.listen(port, () => {
     logger.info(`Server is running on port ${port}`);

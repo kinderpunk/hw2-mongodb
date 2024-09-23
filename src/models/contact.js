@@ -1,20 +1,22 @@
 import mongoose from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate-v2'; 
 
-// Схема контакту
 const contactSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: { type: String, required: true, minlength: 3, maxlength: 20 }, 
   phoneNumber: { type: String, required: true },
-  email: { type: String },
+  email: { type: String, trim: true },
   isFavourite: { type: Boolean, default: false },
   contactType: { type: String, enum: ['work', 'home', 'personal'], default: 'personal' },
 }, {
-  timestamps: true, // автоматичні поля createdAt та updatedAt
+  timestamps: true,
 });
 
-// Модель контакту
+
+contactSchema.plugin(mongoosePaginate);
+
 export const Contact = mongoose.model('Contact', contactSchema);
 
-// Додавання нового контакту
+
 export const addContact = async ({ name, phoneNumber, email, isFavourite, contactType }) => {
   const newContact = new Contact({
     name,
@@ -26,22 +28,18 @@ export const addContact = async ({ name, phoneNumber, email, isFavourite, contac
   return await newContact.save();
 };
 
-// Отримання всіх контактів
-export const getAllContacts = async () => {
-  return await Contact.find();
+export const getAllContacts = async (query, options) => {
+  return await Contact.paginate(query, options); 
 };
 
-// Отримання контакту за ID
 export const getContactById = async (contactId) => {
   return await Contact.findById(contactId);
 };
 
-// Оновлення контакту за ID
 export const updateContactById = async (contactId, updates) => {
   return await Contact.findByIdAndUpdate(contactId, updates, { new: true });
 };
 
-// Видалення контакту за ID
 export const deleteContactById = async (contactId) => {
   return await Contact.deleteOne({ _id: contactId });
 };

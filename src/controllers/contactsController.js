@@ -1,13 +1,32 @@
 import { getAllContacts, getContactById, addContact, updateContactById, deleteContactById } from '../models/contact.js';
 
-// Отримання всіх контактів
 export const getContacts = async (req, res) => {
+  const { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc', type, isFavourite } = req.query;
+
+  const options = {
+    page: parseInt(page),
+    limit: parseInt(perPage),
+    sort: { [sortBy]: sortOrder === 'desc' ? -1 : 1 },
+  };
+
+  const query = {};
+  if (type) query.contactType = type;
+  if (isFavourite !== undefined) query.isFavourite = isFavourite === 'true';
+
   try {
-    const contacts = await getAllContacts();
+    const contacts = await getAllContacts(query, options);
     res.json({
       status: 200,
-      message: "Contacts retrieved successfully",
-      data: contacts,
+      message: "Successfully found contacts!",
+      data: {
+        data: contacts.docs,
+        page: contacts.page,
+        perPage: contacts.limit,
+        totalItems: contacts.totalDocs,
+        totalPages: contacts.totalPages,
+        hasPreviousPage: contacts.hasPrevPage,
+        hasNextPage: contacts.hasNextPage,
+      },
     });
   } catch (error) {
     console.error('Error details:', error);
@@ -15,7 +34,6 @@ export const getContacts = async (req, res) => {
   }
 };
 
-// Отримання контакту за ID
 export const getContact = async (req, res) => {
   const { contactId } = req.params;
   try {
@@ -34,7 +52,6 @@ export const getContact = async (req, res) => {
   }
 };
 
-// Створення нового контакту
 export const createContact = async (req, res) => {
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
   try {
@@ -49,7 +66,6 @@ export const createContact = async (req, res) => {
   }
 };
 
-// Оновлення контакту за ID
 export const updateContact = async (req, res) => {
   const { contactId } = req.params;
   const updates = req.body;
@@ -71,7 +87,6 @@ export const updateContact = async (req, res) => {
   }
 };
 
-// Видалення контакту за ID
 export const deleteContact = async (req, res) => {
   const { contactId } = req.params;
 
