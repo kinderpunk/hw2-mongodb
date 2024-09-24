@@ -1,40 +1,21 @@
 import { getAllContacts, getContactById, addContact, updateContactById, deleteContactById } from '../models/contact.js';
+import createError from 'http-errors';
 
-export const getContacts = async (req, res) => {
-  const { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc', type, isFavourite } = req.query;
-
-  const options = {
-    page: parseInt(page),
-    limit: parseInt(perPage),
-    sort: { [sortBy]: sortOrder === 'desc' ? -1 : 1 },
-  };
-
-  const query = {};
-  if (type) query.contactType = type;
-  if (isFavourite !== undefined) query.isFavourite = isFavourite === 'true';
-
+export const getContacts = async (req, res, next) => {
   try {
-    const contacts = await getAllContacts(query, options);
+    const contacts = await getAllContacts();
     res.json({
       status: 200,
-      message: "Successfully found contacts!",
-      data: {
-        data: contacts.docs,
-        page: contacts.page,
-        perPage: contacts.limit,
-        totalItems: contacts.totalDocs,
-        totalPages: contacts.totalPages,
-        hasPreviousPage: contacts.hasPrevPage,
-        hasNextPage: contacts.hasNextPage,
-      },
+      message: "Contacts retrieved successfully",
+      data: contacts,
     });
   } catch (error) {
-    console.error('Error details:', error);
-    res.status(500).json({ message: 'Error retrieving contacts' });
+    next(createError(500, 'Error retrieving contacts'));
   }
 };
 
-export const getContact = async (req, res) => {
+
+export const getContact = async (req, res, next) => {
   const { contactId } = req.params;
   try {
     const contact = await getContactById(contactId);
@@ -45,14 +26,16 @@ export const getContact = async (req, res) => {
         data: contact,
       });
     } else {
-      res.status(404).json({ status: 404, message: 'Contact not found' });
+      
+      next(createError(404, { status: 404, message: 'Contact not found', data: null }));
     }
   } catch (error) {
-    res.status(500).json({ message: 'Error retrieving contact' });
+    next(createError(500, 'Error retrieving contact'));
   }
 };
 
-export const createContact = async (req, res) => {
+
+export const createContact = async (req, res, next) => {
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
   try {
     const newContact = await addContact({ name, phoneNumber, email, isFavourite, contactType });
@@ -62,11 +45,12 @@ export const createContact = async (req, res) => {
       data: newContact,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating contact' });
+    next(createError(500, 'Error creating contact'));
   }
 };
 
-export const updateContact = async (req, res) => {
+
+export const updateContact = async (req, res, next) => {
   const { contactId } = req.params;
   const updates = req.body;
 
@@ -79,15 +63,16 @@ export const updateContact = async (req, res) => {
         data: updatedContact,
       });
     } else {
-      res.status(404).json({ status: 404, message: 'Contact not found' });
+      
+      next(createError(404, { status: 404, message: 'Contact not found', data: null }));
     }
   } catch (error) {
-    console.error('Error details:', error);
-    res.status(500).json({ message: 'Error updating contact' });
+    next(createError(500, 'Error updating contact'));
   }
 };
 
-export const deleteContact = async (req, res) => {
+
+export const deleteContact = async (req, res, next) => {
   const { contactId } = req.params;
 
   try {
@@ -95,9 +80,10 @@ export const deleteContact = async (req, res) => {
     if (result.deletedCount > 0) {
       res.status(204).send();
     } else {
-      res.status(404).json({ status: 404, message: 'Contact not found' });
+     
+      next(createError(404, { status: 404, message: 'Contact not found', data: null }));
     }
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting contact' });
+    next(createError(500, 'Error deleting contact'));
   }
 };
