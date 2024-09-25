@@ -4,13 +4,30 @@ import ctrlWrapper from '../utils/ctrlWrapper.js';
 
 
 const getContacts = ctrlWrapper(async (req, res, next) => {
-  const contacts = await getAllContacts();
+  const { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc' } = req.query;
+  const skip = (page - 1) * perPage;
+
+  const totalItems = await Contact.countDocuments();
+  const contacts = await getAllContacts()
+    .skip(skip)
+    .limit(perPage)
+    .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 });
+
   res.json({
     status: 200,
     message: "Contacts retrieved successfully",
-    data: contacts,
+    data: {
+      data: contacts,
+      page: Number(page),
+      perPage: Number(perPage),
+      totalItems,
+      totalPages: Math.ceil(totalItems / perPage),
+      hasPreviousPage: page > 1,
+      hasNextPage: skip + contacts.length < totalItems,
+    },
   });
 });
+
 
 const getContact = ctrlWrapper(async (req, res, next) => {
   const { contactId } = req.params;
@@ -26,6 +43,7 @@ const getContact = ctrlWrapper(async (req, res, next) => {
   });
 });
 
+
 const createContact = ctrlWrapper(async (req, res, next) => {
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
   const newContact = await addContact({ name, phoneNumber, email, isFavourite, contactType });
@@ -35,6 +53,7 @@ const createContact = ctrlWrapper(async (req, res, next) => {
     data: newContact,
   });
 });
+
 
 const updateContact = ctrlWrapper(async (req, res, next) => {
   const { contactId } = req.params;
@@ -51,6 +70,7 @@ const updateContact = ctrlWrapper(async (req, res, next) => {
   });
 });
 
+
 const deleteContact = ctrlWrapper(async (req, res, next) => {
   const { contactId } = req.params;
   const result = await deleteContactById(contactId);
@@ -60,5 +80,6 @@ const deleteContact = ctrlWrapper(async (req, res, next) => {
   }
   res.status(204).send();
 });
+
 
 export { getContacts, getContact, createContact, updateContact, deleteContact };
