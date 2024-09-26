@@ -1,40 +1,85 @@
-import { getAllContacts, getContactById, addContact, updateContactById, deleteContactById } from '../models/contact.js';
+import { Contact } from '../models/contact.js';
 import createError from 'http-errors';
 import ctrlWrapper from '../utils/ctrlWrapper.js';
+import { contactSchema } from '../validations/contactValidation.js'; // Імпорт схеми валідації
+import Joi from 'joi';
 
+
+const paginationSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  perPage: Joi.number().integer().min(1).default(10),
+  sortBy: Joi.string().valid('name', 'phoneNumber', 'email', 'isFavourite', 'contactType').default('name'),
+  sortOrder: Joi.string().valid('asc', 'desc').default('asc'),
+  type: Joi.string().valid('work', 'home', 'personal').optional(), // Додано для фільтрації
+  isFavourite: Joi.boolean().optional() 
+});
 
 const getContacts = ctrlWrapper(async (req, res, next) => {
-  const { page = 1, perPage = 10, sortBy = 'name', sortOrder = 'asc' } = req.query;
+  const { error, value } = paginationSchema.validate(req.query);
+  if (error) {
+    return res.status(400).json({
+      status: 400,
+      message: error.details[0].message,
+    });
+  }
+
+  const { page, perPage, sortBy, sortOrder, type, isFavourite } = value;
   const skip = (page - 1) * perPage;
 
-  const totalItems = await Contact.countDocuments();
-  const contacts = await getAllContacts()
+ 
+  const filter = {};
+  if (type) {
+    filter.contactType = type;
+  }
+  if (isFavourite !== undefined) {
+    filter.isFavourite = isFavourite; 
+  }
+
+
+  const totalItems = await Contact.countDocuments(filter);
+
+  
+  const contacts = await Contact.find(filter)
     .skip(skip)
     .limit(perPage)
     .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 });
+
+
+  if (contacts.length === 0) {
+    return res.status(404).json({
+      status: 404,
+      message: 'No contacts found',
+    });
+  }
+
+
+  const totalPages = Math.ceil(totalItems / perPage);
+  const hasPreviousPage = page > 1;
+  const hasNextPage = page < totalPages;
 
   res.json({
     status: 200,
     message: "Contacts retrieved successfully",
     data: {
-      data: contacts,
-      page: Number(page),
-      perPage: Number(perPage),
+      contacts,
+      page,
+      perPage,
       totalItems,
-      totalPages: Math.ceil(totalItems / perPage),
-      hasPreviousPage: page > 1,
-      hasNextPage: skip + contacts.length < totalItems,
+      totalPages,
+      hasPreviousPage,
+      hasNextPage,
     },
   });
 });
 
-
 const getContact = ctrlWrapper(async (req, res, next) => {
   const { contactId } = req.params;
-  const contact = await getContactById(contactId);
+  const contact = await Contact.findById(contactId);
   if (!contact) {
-    next(createError(404, 'Contact not found'));
-    return;
+    return res.status(404).json({
+      status: 404,
+      message: 'Contact not found',
+    });
   }
   res.json({
     status: 200,
@@ -43,10 +88,18 @@ const getContact = ctrlWrapper(async (req, res, next) => {
   });
 });
 
-
 const createContact = ctrlWrapper(async (req, res, next) => {
+  const { error } = contactSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({
+      status: 400,
+      message: error.details[0].message,
+    });
+  }
+
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
-  const newContact = await addContact({ name, phoneNumber, email, isFavourite, contactType });
+  const newContact = new Contact({ name, phoneNumber, email, isFavourite, contactType });
+  await newContact.save();
   res.status(201).json({
     status: 201,
     message: "Contact created successfully",
@@ -54,32 +107,41 @@ const createContact = ctrlWrapper(async (req, res, next) => {
   });
 });
 
-
 const updateContact = ctrlWrapper(async (req, res, next) => {
   const { contactId } = req.params;
+  const { error } = contactSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({
+      status: 400,
+      message: error.details[0].message,
+    });
+  }
+
   const updates = req.body;
-  const updatedContact = await updateContactById(contactId, updates);
+  const updatedContact = await Contact.findByIdAndUpdate(contactId, updates, { new: true });
   if (!updatedContact) {
-    next(createError(404, 'Contact not found'));
-    return;
+    return res.status(404).json({
+      status: 404,
+      message: 'Contact not found',
+    });
   }
   res.json({
     status: 200,
-    message: "Successfully patched a contact!",
+    message: "Contact updated successfully",
     data: updatedContact,
   });
 });
 
-
 const deleteContact = ctrlWrapper(async (req, res, next) => {
   const { contactId } = req.params;
-  const result = await deleteContactById(contactId);
+  const result = await Contact.deleteOne({ _id: contactId });
   if (result.deletedCount === 0) {
-    next(createError(404, 'Contact not found'));
-    return;
+    return res.status(404).json({
+      status: 404,
+      message: 'Contact not found',
+    });
   }
   res.status(204).send();
 });
-
 
 export { getContacts, getContact, createContact, updateContact, deleteContact };

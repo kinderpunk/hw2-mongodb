@@ -2,7 +2,7 @@ import express from 'express';
 import { getContacts, getContact, createContact, updateContact, deleteContact } from '../controllers/contactsController.js';
 import validateBody from '../middlewares/validateBody.js';
 import isValidId from '../middlewares/isValidId.js';
-import { contactSchema } from '../validations/contactValidation.js'; // Додано
+import { contactSchema } from '../validations/contactValidation.js';
 
 const router = express.Router();
 
