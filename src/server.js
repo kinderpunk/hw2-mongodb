@@ -2,9 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import pino from 'pino';
 import contactsRouter from './routers/contacts.js'; 
+import authRouter from './routers/auth.js'; 
 import notFoundHandler from './middlewares/notFoundHandler.js';
 import errorHandler from './middlewares/errorHandler.js';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 const logger = pino();
@@ -16,7 +18,8 @@ export function setupServer() {
   app.use(express.json());
 
   // Routes
-  app.use(contactsRouter); 
+  app.use(contactsRouter);
+  app.use('/auth', authRouter); 
 
   // Handling undefined routes
   app.use(notFoundHandler);
