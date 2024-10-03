@@ -13,15 +13,15 @@ const authenticate = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    const user = await User.findById(decoded.userId); 
+    const decoded = jwt.verify(token, process.env.JWT_SECRET); 
+    const user = await User.findById(decoded.userId);
 
     if (!user) {
       throw createHttpError(401, 'User not found');
     }
 
     req.user = user; 
-    next(); 
+    next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       throw createHttpError(401, 'Access token expired');
