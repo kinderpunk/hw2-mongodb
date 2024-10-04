@@ -16,10 +16,11 @@ export function setupServer() {
   // Middleware
   app.use(cors());
   app.use(express.json());
+  app.use('/auth', authRouter); 
 
   // Routes
   app.use(contactsRouter);
-  app.use('/auth', authRouter); 
+ 
 
   // Handling undefined routes
   app.use(notFoundHandler);
