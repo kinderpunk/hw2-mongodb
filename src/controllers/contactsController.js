@@ -25,6 +25,7 @@ const getContacts = ctrlWrapper(async (req, res, next) => {
   const { page, perPage, sortBy, sortOrder, type, isFavourite } = value;
   const skip = (page - 1) * perPage;
 
+
   const filter = { userId: req.user._id }; 
 
   if (type) {
@@ -36,7 +37,7 @@ const getContacts = ctrlWrapper(async (req, res, next) => {
 
   const totalItems = await Contact.countDocuments(filter);
   
-  const contacts = await Contact.find(filter)
+  const contacts = await Contact.find(filter)  
     .skip(skip)
     .limit(perPage)
     .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 });
@@ -144,7 +145,8 @@ const updateContact = ctrlWrapper(async (req, res, next) => {
 
 const deleteContact = ctrlWrapper(async (req, res, next) => {
   const { contactId } = req.params;
-  const result = await Contact.deleteOne({ _id: contactId, userId: req.user._id }); 
+  const result = await Contact.findOneAndDelete({ _id: contactId, userId: req.user._id });
+
 
   if (result.deletedCount === 0) {
     return res.status(404).json({
