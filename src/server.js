@@ -19,8 +19,7 @@ export function setupServer() {
   app.use('/auth', authRouter); 
 
   // Routes
-  app.use(contactsRouter);
- 
+  app.use("/contacts", contactsRouter); 
 
   // Handling undefined routes
   app.use(notFoundHandler);

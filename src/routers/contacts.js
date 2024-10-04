@@ -8,12 +8,10 @@ import authenticate from '../middlewares/authenticate.js';
 const router = express.Router();
 router.use(authenticate);
 
-
-router.get('/contacts', getContacts);
-router.get('/contacts/:contactId', isValidId, getContact);
-router.post('/contacts', validateBody(contactSchema), createContact);
-router.patch('/contacts/:contactId', isValidId, validateBody(contactSchema), updateContact);
-router.delete('/contacts/:contactId', isValidId, deleteContact);
-
+router.get('/', getContacts); 
+router.get('/:contactId', isValidId, getContact); 
+router.post('/', validateBody(contactSchema), createContact); 
+router.patch('/:contactId', isValidId, validateBody(contactSchema), updateContact); 
+router.delete('/:contactId', isValidId, deleteContact); 
 
 export default router;
