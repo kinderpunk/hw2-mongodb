@@ -42,6 +42,7 @@ export const login = async (req, res, next) => {
         accessToken,
       },
     });
+    console.log('Login attempt:', { email, password });
   } catch (error) {
     next(createHttpError(401, 'Invalid email or password'));
   }

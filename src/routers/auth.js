@@ -5,16 +5,9 @@ import { userRegisterSchema, userLoginSchema } from '../validations/authValidati
 
 const router = express.Router();
 
-// Маршрут для реєстрації користувача
 router.post('/register', validateBody(userRegisterSchema), register);
-
-// Маршрут для логіну користувача
 router.post('/login', validateBody(userLoginSchema), login);
-
-// Маршрут для оновлення сесії
 router.post('/refresh', refreshSession);
-
-// Маршрут для логауту користувача
 router.post('/logout', logout);
 
 export default router;

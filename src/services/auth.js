@@ -20,26 +20,31 @@ export const registerUser = async (name, email, password) => {
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = new User({ name, email, password: hashedPassword });
   await user.save();
+  
+  console.log('Registered user:', user); 
   return user;
 };
 
 export const loginUser = async (email, password) => {
+  console.log('Email:', email); 
   const user = await User.findOne({ email });
+  console.log('Found user:', user); 
+  
   if (!user) {
     throw createHttpError(401, 'Invalid email or password');
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
+  console.log('Password valid:', isPasswordValid); 
+  
   if (!isPasswordValid) {
     throw createHttpError(401, 'Invalid email or password');
   }
 
- 
   await Session.findOneAndDelete({ userId: user._id });
 
   const { accessToken, refreshToken } = generateTokens(user._id);
 
- 
   const accessTokenValidUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 хвилин
   const refreshTokenValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 днів
 
@@ -52,6 +57,7 @@ export const loginUser = async (email, password) => {
   });
   await session.save();
 
+  console.log('Generated tokens:', { accessToken, refreshToken }); // Логування згенерованих токенів
   return { accessToken, refreshToken };
 };
 
