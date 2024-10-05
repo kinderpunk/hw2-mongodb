@@ -1,33 +1,33 @@
-import { Contact } from '../models/contact.js';  // Статичний імпорт
+import { Contact } from '../models/contact.js';
 
-export const addContact = async ({ name, phoneNumber, email, isFavourite, contactType }) => {
+export const addContact = async ({ name, phoneNumber, email, isFavourite, contactType, userId }) => {
   const newContact = new Contact({
     name,
     phoneNumber,
-    email: email || '',  // Якщо email не вказано, зберігаємо порожній рядок
-    isFavourite: isFavourite || false,  // За замовчуванням не улюблений контакт
+    email: email || '',  
+    isFavourite: isFavourite || false,  
     contactType,
+    userId,  
   });
 
-  return await newContact.save();  // Зберігаємо новий контакт у базу даних
+  return await newContact.save(); 
 };
 
-// Отримання всіх контактів
-export const getAllContacts = async () => {
-  return await Contact.find();
+export const getAllContacts = async ({ filter, skip = 0, limit = 10, sortBy = 'name', sortOrder = 'asc' }) => {
+  return await Contact.find(filter)
+    .skip(skip)
+    .limit(limit)
+    .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 });
 };
 
-// Отримання контакту за ID
-export const getContactById = async (contactId) => {
-  return await Contact.findById(contactId);
+export const getContactById = async (contactId, userId) => {
+  return await Contact.findOne({ _id: contactId, userId });
 };
 
-// Оновлення контакту за ID
-export const updateContactById = async (contactId, updates) => {
-  return await Contact.findByIdAndUpdate(contactId, updates, { new: true });
+export const updateContactById = async (contactId, userId, updates) => {
+  return await Contact.findOneAndUpdate({ _id: contactId, userId }, updates, { new: true });
 };
 
-// Видалення контакту за ID
-export const deleteContactById = async (contactId) => {
-  return await Contact.deleteOne({ _id: contactId });
+export const deleteContactById = async (contactId, userId) => {
+  return await Contact.findOneAndDelete({ _id: contactId, userId });
 };

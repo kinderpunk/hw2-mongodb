@@ -1,8 +1,14 @@
-import { Contact } from '../models/contact.js';
 import createError from 'http-errors';
 import ctrlWrapper from '../utils/ctrlWrapper.js';
 import { contactSchema } from '../validations/contactValidation.js'; 
 import Joi from 'joi';
+import {
+  getAllContacts,
+  getContactById,
+  addContact,
+  updateContactById,
+  deleteContactById
+} from '../services/contacts.js'; 
 
 const paginationSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
@@ -25,7 +31,6 @@ const getContacts = ctrlWrapper(async (req, res, next) => {
   const { page, perPage, sortBy, sortOrder, type, isFavourite } = value;
   const skip = (page - 1) * perPage;
 
-
   const filter = { userId: req.user._id }; 
 
   if (type) {
@@ -35,12 +40,9 @@ const getContacts = ctrlWrapper(async (req, res, next) => {
     filter.isFavourite = isFavourite; 
   }
 
-  const totalItems = await Contact.countDocuments(filter);
+  const totalItems = await getAllContacts(filter); 
   
-  const contacts = await Contact.find(filter)  
-    .skip(skip)
-    .limit(perPage)
-    .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 });
+  const contacts = await getAllContacts({ filter, skip, limit: perPage, sortBy, sortOrder }); // Викликаємо сервіс
 
   if (contacts.length === 0) {
     return res.status(404).json({
@@ -70,7 +72,7 @@ const getContacts = ctrlWrapper(async (req, res, next) => {
 
 const getContact = ctrlWrapper(async (req, res, next) => {
   const { contactId } = req.params;
-  const contact = await Contact.findOne({ _id: contactId, userId: req.user._id }); 
+  const contact = await getContactById(contactId, req.user._id);  // Викликаємо функцію з сервісу
 
   if (!contact) {
     return res.status(404).json({
@@ -95,16 +97,15 @@ const createContact = ctrlWrapper(async (req, res, next) => {
   }
 
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
-  const newContact = new Contact({ 
+  const newContact = await addContact({ 
     name, 
     phoneNumber, 
     email, 
     isFavourite, 
     contactType,
     userId: req.user._id 
-  });
+  }); 
   
-  await newContact.save();
   res.status(201).json({
     status: 201,
     message: "Contact created successfully",
@@ -123,11 +124,7 @@ const updateContact = ctrlWrapper(async (req, res, next) => {
   }
 
   const updates = req.body;
-  const updatedContact = await Contact.findOneAndUpdate(
-    { _id: contactId, userId: req.user._id }, 
-    updates,
-    { new: true }
-  );
+  const updatedContact = await updateContactById(contactId, req.user._id, updates); // Викликаємо функцію з сервісу
 
   if (!updatedContact) {
     return res.status(404).json({
@@ -145,10 +142,9 @@ const updateContact = ctrlWrapper(async (req, res, next) => {
 
 const deleteContact = ctrlWrapper(async (req, res, next) => {
   const { contactId } = req.params;
-  const result = await Contact.findOneAndDelete({ _id: contactId, userId: req.user._id });
+  const result = await deleteContactById(contactId, req.user._id); // Викликаємо функцію з сервісу
 
-
-  if (result.deletedCount === 0) {
+  if (!result) {
     return res.status(404).json({
       status: 404,
       message: 'Contact not found',
