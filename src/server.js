@@ -6,6 +6,7 @@ import authRouter from './routers/auth.js';
 import notFoundHandler from './middlewares/notFoundHandler.js';
 import errorHandler from './middlewares/errorHandler.js';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ export function setupServer() {
   app.use(cors());
   app.use(express.json());
   app.use('/auth', authRouter); 
+  app.use(cookieParser());
 
   // Routes
   app.use("/contacts", contactsRouter); 

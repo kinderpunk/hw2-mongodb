@@ -31,18 +31,20 @@ const getContacts = ctrlWrapper(async (req, res, next) => {
   const { page, perPage, sortBy, sortOrder, type, isFavourite } = value;
   const skip = (page - 1) * perPage;
 
-  const filter = { userId: req.user._id }; 
+  const filter = { userId: req.user._id };
 
   if (type) {
     filter.contactType = type;
   }
   if (isFavourite !== undefined) {
-    filter.isFavourite = isFavourite; 
+    filter.isFavourite = isFavourite;
   }
 
-  const totalItems = await getAllContacts(filter); 
-  
-  const contacts = await getAllContacts({ filter, skip, limit: perPage, sortBy, sortOrder }); // Викликаємо сервіс
+  const totalItems = await Contact.countDocuments(filter);
+  const contacts = await Contact.find(filter)
+    .sort({ [sortBy]: sortOrder })
+    .skip(skip)
+    .limit(perPage);
 
   if (contacts.length === 0) {
     return res.status(404).json({
@@ -55,11 +57,11 @@ const getContacts = ctrlWrapper(async (req, res, next) => {
   const hasPreviousPage = page > 1;
   const hasNextPage = page < totalPages;
 
-  res.json({
+  res.status(200).json({
     status: 200,
-    message: "Contacts retrieved successfully",
+    message: 'Successfully found contacts!',
     data: {
-      contacts,
+      data: contacts,
       page,
       perPage,
       totalItems,
@@ -69,6 +71,7 @@ const getContacts = ctrlWrapper(async (req, res, next) => {
     },
   });
 });
+
 
 const getContact = ctrlWrapper(async (req, res, next) => {
   const { contactId } = req.params;

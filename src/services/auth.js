@@ -75,14 +75,12 @@ export const refreshUserSession = async (refreshToken) => {
     throw createHttpError(401, 'Session not found');
   }
 
-  
   await Session.findByIdAndDelete(session._id);
 
-  const { accessToken, newRefreshToken } = generateTokens(session.userId);
+  const { accessToken, refreshToken: newRefreshToken } = generateTokens(session.userId);
 
- 
-  const accessTokenValidUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 хвилин
-  const refreshTokenValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 днів
+  const accessTokenValidUntil = new Date(Date.now() + 15 * 60 * 1000); 
+  const refreshTokenValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); 
 
   const newSession = new Session({
     userId: session.userId,
@@ -95,7 +93,6 @@ export const refreshUserSession = async (refreshToken) => {
   await newSession.save();
 
   return { accessToken, refreshToken: newRefreshToken };
-
 };
 
 export const logoutUser = async (refreshToken) => {

@@ -42,7 +42,6 @@ export const login = async (req, res, next) => {
         accessToken,
       },
     });
-    console.log('Login attempt:', { email, password });
   } catch (error) {
     next(createHttpError(401, 'Invalid email or password'));
   }
@@ -56,7 +55,7 @@ export const refreshSession = async (req, res, next) => {
       throw createHttpError(401, 'Refresh token not found');
     }
 
-    const { accessToken, newRefreshToken } = await refreshUserSession(refreshToken);
+    const { accessToken, refreshToken: newRefreshToken } = await refreshUserSession(refreshToken);
 
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
@@ -66,7 +65,7 @@ export const refreshSession = async (req, res, next) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'Successfully refreshed a session!',
+      message: 'Session successfully refreshed!',
       data: {
         accessToken,
       },
@@ -76,15 +75,23 @@ export const refreshSession = async (req, res, next) => {
   }
 };
 
-
 export const logout = async (req, res, next) => {
   try {
-    const { sessionId } = req.body; 
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw createHttpError(401, 'Authorization header is missing or invalid');
+    }
 
-    await Session.findByIdAndDelete(sessionId); 
+    const token = authHeader.split(' ')[1];
+
+
+    const session = await Session.findOneAndDelete({ accessToken: token });
+
+    if (!session) {
+      throw createHttpError(401, 'Session not found');
+    }
 
     res.clearCookie('refreshToken'); 
-
     res.status(204).send(); 
   } catch (error) {
     next(error);
